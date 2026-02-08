@@ -1,3 +1,6 @@
+# Ignore the software folder for project built from source
+works/
+
 # Prerequisites
 *.d
 
