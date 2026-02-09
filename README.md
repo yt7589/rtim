@@ -45,13 +45,49 @@ sudo apt install libopencascade-dev
 cd ~
 git clone https://github.com/Open-Cascade-SAS/OCCT.git
 cd OCCT
-git checkout V7_6_0
+git checkout V7_9_3
 mkdir build && cd build
-cmake .. -DINSTALL_DIR=~/occt-7.6.0 -DUSE_TBB=ON -DUSE_FREEIMAGE=ON
+sudo apt install libvtk9-dev
+cmake .. \
+  -DINSTALL_DIR=~/opencascade \
+  # FreeImage配置（解决之前的错误）
+  -D3RDPARTY_FREEIMAGE_INCLUDE_DIR=/usr/include \
+  -D3RDPARTY_FREEIMAGE_LIBRARY=/usr/lib/x86_64-linux-gnu/libfreeimage.so \
+  # TIFF配置（解决之前的错误）
+  -D3RDPARTY_TIFF_INCLUDE_DIR=/usr/include/x86_64-linux-gnu \
+  -D3RDPARTY_TIFF_LIBRARY=/usr/lib/x86_64-linux-gnu/libtiff.so \
+  # 其他可能需要的配置
+  -DBUILD_MODULE_Draw=ON \
+  -DUSE_TCL=ON \
+  -DUSE_TK=ON \
+  -DUSE_FREEIMAGE=ON
 make -j$(nproc)
 sudo make install
 
+vim /home/yantao/opencascade/lib/pkgconfig/opencascade.pc
+#################################################################################################
+# 文件内容
+#################################################################################################
+prefix=/home/yantao/opencascade
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include/opencascade
+
+Name: OpenCASCADE
+Description: Open CASCADE Technology, 3D modeling & numerical simulation
+Version: 7.9.3
+Requires:
+Libs: -L${libdir} -lTKernel -lTKMath -lTKBRep -lTKTopAlgo -lTKPrim -lTKBool -lTKShHealing -lTKMesh -lTKSTEP -lTKIGES -lTKSTL -lTKVRML -lTKXSBase -lTKG2d -lTKG3d -lTKGeomBase -lTKGeomAlgo -lTKFillet -lTKOffset -lTKFeat -lTKHDF -lTKService -lTKHLR -lTKBO -lTKCAF -lTKCDF -lTKLCAF -lTKTObj -lTKVCAF -lTKXDESTEP -lTKXDEIGES -lTKXmlXCAF -lTKRWMesh -lTKXS -lTKOpenGL -lTKMeshVS -lTKV3d -lTKViewerTest -lTKIVtk -lTKD3DHost -lTKQADraw -lTKTObjDRAW -lTKDraw -lTKTopTest -lTKXSDRAW -lTKDCAF -lTKStdL -lTKStd -lTKBinL -lTKBin -lTKXmlL -lTKXml -lTKPShape -lTKShapeSchema -lTKBinTObj -lTKXmlTObj -lTKBinXCAF -lTKXmlXCAF -lFWOSPlugin -lTKOpenGlTest
+Cflags: -I${includedir} -DHAVE_CONFIG_H
+########################################################################################################
+# 编辑 ~/.bashrc（如果使用 bash）
+echo 'export PKG_CONFIG_PATH=/home/yantao/opencascade/lib/pkgconfig:$PKG_CONFIG_PATH' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=/home/yantao/opencascade/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+# 使配置生效
+source ~/.bashrc
+
 # 3. 验证OCCT安装
 pkg-config --modversion opencascade
+# 显示7.9.3即为正确安装
 ```
 
