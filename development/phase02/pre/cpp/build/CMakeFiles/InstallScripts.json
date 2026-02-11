@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/mnt/d/adev/rtim/development/phase02/pre/cpp/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

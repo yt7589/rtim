@@ -47,23 +47,37 @@ git clone https://github.com/Open-Cascade-SAS/OCCT.git
 cd OCCT
 git checkout V7_9_3
 mkdir build && cd build
+# 安装依赖库
 sudo apt install libvtk9-dev
-cmake .. \
-  -DINSTALL_DIR=~/opencascade \
-  # FreeImage配置（解决之前的错误）
-  -D3RDPARTY_FREEIMAGE_INCLUDE_DIR=/usr/include \
-  -D3RDPARTY_FREEIMAGE_LIBRARY=/usr/lib/x86_64-linux-gnu/libfreeimage.so \
-  # TIFF配置（解决之前的错误）
-  -D3RDPARTY_TIFF_INCLUDE_DIR=/usr/include/x86_64-linux-gnu \
-  -D3RDPARTY_TIFF_LIBRARY=/usr/lib/x86_64-linux-gnu/libtiff.so \
-  # 其他可能需要的配置
-  -DBUILD_MODULE_Draw=ON \
-  -DUSE_TCL=ON \
-  -DUSE_TK=ON \
-  -DUSE_FREEIMAGE=ON
-make -j$(nproc)
-sudo make install
+sudo apt-get install -y \
+  libfreeimage-dev \
+  libtiff-dev \
+  libfreetype6-dev \
+  libgl1-mesa-dev \
+  libx11-dev \
+  libxmu-dev \
+  libxi-dev \
+  libglu1-mesa-dev \
+  libglew-dev
 
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=/home/yantao/opencascade \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_LIBRARY_TYPE=Shared \
+    -DBUILD_MODULE_ApplicationFramework=ON \
+    -DBUILD_MODULE_DataExchange=ON \
+    -DBUILD_MODULE_ModelingData=ON \
+    -DBUILD_MODULE_ModelingAlgorithms=ON \
+    -DBUILD_MODULE_Visualization=ON \
+    -DUSE_FREEIMAGE=ON \
+    -DUSE_FREETYPE=ON \
+    -DUSE_VTK=ON \
+    -DUSE_OPENGL=ON
+
+make -j$(nproc)
+make install
+
+mkdir /home/yantao/opencascade/lib/pkgconfig
 vim /home/yantao/opencascade/lib/pkgconfig/opencascade.pc
 #################################################################################################
 # 文件内容
@@ -77,7 +91,7 @@ Name: OpenCASCADE
 Description: Open CASCADE Technology, 3D modeling & numerical simulation
 Version: 7.9.3
 Requires:
-Libs: -L${libdir} -lTKernel -lTKMath -lTKBRep -lTKTopAlgo -lTKPrim -lTKBool -lTKShHealing -lTKMesh -lTKSTEP -lTKIGES -lTKSTL -lTKVRML -lTKXSBase -lTKG2d -lTKG3d -lTKGeomBase -lTKGeomAlgo -lTKFillet -lTKOffset -lTKFeat -lTKHDF -lTKService -lTKHLR -lTKBO -lTKCAF -lTKCDF -lTKLCAF -lTKTObj -lTKVCAF -lTKXDESTEP -lTKXDEIGES -lTKXmlXCAF -lTKRWMesh -lTKXS -lTKOpenGL -lTKMeshVS -lTKV3d -lTKViewerTest -lTKIVtk -lTKD3DHost -lTKQADraw -lTKTObjDRAW -lTKDraw -lTKTopTest -lTKXSDRAW -lTKDCAF -lTKStdL -lTKStd -lTKBinL -lTKBin -lTKXmlL -lTKXml -lTKPShape -lTKShapeSchema -lTKBinTObj -lTKXmlTObj -lTKBinXCAF -lTKXmlXCAF -lFWOSPlugin -lTKOpenGlTest
+Libs: -L${libdir} -lTKernel -lTKMath -lTKBRep -lTKTopAlgo -lTKPrim -lTKBool -lTKShHealing -lTKMesh -lTKXSBase -lTKG2d -lTKG3d -lTKGeomBase -lTKGeomAlgo -lTKFillet -lTKOffset -lTKFeat  -lTKService -lTKHLR -lTKBO -lTKCAF -lTKCDF -lTKLCAF -lTKTObj -lTKVCAF -lTKXmlXCAF -lTKRWMesh   -lTKMeshVS -lTKV3d -lTKViewerTest -lTKIVtk -lTKQADraw -lTKTObjDRAW -lTKDraw -lTKTopTest -lTKXSDRAW -lTKDCAF -lTKStdL -lTKStd -lTKBinL -lTKBin -lTKXmlL -lTKXml -lTKBinTObj -lTKXmlTObj -lTKBinXCAF -lTKXmlXCAF -lTKOpenGlTest
 Cflags: -I${includedir} -DHAVE_CONFIG_H
 ########################################################################################################
 # 编辑 ~/.bashrc（如果使用 bash）
@@ -91,3 +105,90 @@ pkg-config --modversion opencascade
 # 显示7.9.3即为正确安装
 ```
 
+设置git代理
+```bash
+git config http.proxy http://127.0.0.1:7897
+git config https.proxy http://127.0.0.1:7897
+# 取消设置
+git config --unset http.proxy
+git config --unset https.proxy
+
+# ssh代理
+#编辑 ~/.ssh/config 文件，添加以下内容：
+Host github.com
+User git
+ProxyCommand connect -S 127.0.0.1:1080 %h %p
+```
+
+### 1.2.2. 生成自由曲面
+#### 1.2.2.1. Python生成
+先安装OpenCASCADE的Python开发库：
+```bash
+sudo apt install swig
+git clone https://github.com/tpaviot/pythonocc-core.git
+cd pythonocc-core
+git checkout -b 7.9.3  # 或具体 tag，如 git checkout 7.8.0
+export CASROOT=/home/yantao/opencascade    # 替换为你的实际 OCCT 安装路径
+export LD_LIBRARY_PATH=$CASROOT/lib:$LD_LIBRARY_PATH
+#
+conda activate samt
+pip install cmake numpy
+# 编译并安装 pythonocc-core（关键：指定 OCCT 路径）
+python setup.py build_ext --rpath=$CASROOT/lib
+
+# 源码安装特定版本swig
+sudo apt-get install -y \
+    wget \
+    libglu1-mesa-dev \
+    libgl1-mesa-dev \
+    libxmu-dev \
+    libxi-dev \
+    build-essential \
+    cmake \
+    libfreetype6-dev \
+    tk-dev \
+    python3-dev \
+    rapidjson-dev \
+    python3 \
+    git \
+    python3-pip \
+    libpcre2-dev
+
+wget http://prdownloads.sourceforge.net/swig/swig-4.3.0.tar.gz
+tar -zxvf swig-4.3.0.tar.gz
+cd swig-4.3.0
+./configure
+make -j$(nproc)
+sudo make install
+
+# 向系统添加OpenCASCADE
+sudo bash -c 'echo "/home/yantao/opencascade/lib" >> /etc/ld.so.conf.d/occt.conf'
+sudo ldconfig
+
+# 编译pythonocc-core
+PYTHONOCC_INSTALL_DIRECTORY=${PYTHONOCC_INSTALL_DIRECTORY:-/usr/local}
+cmake \
+    -DOCCT_INCLUDE_DIR=/home/yantao/opencascade/include/opencascade \
+    -DOCCT_LIBRARY_DIR=/home/yantao/opencascade/lib \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DPYTHONOCC_INSTALL_DIRECTORY=$PYTHONOCC_INSTALL_DIRECTORY \
+    ..
+
+
+cmake .. \
+  -DPYTHON_EXECUTABLE=$(which python) \
+  -DPYTHON_INCLUDE_DIR=$(python -c "from sysconfig import get_paths as g; print(g()['include'])") \
+  -DPYTHON_LIBRARY=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') + '/libpython' + sysconfig.get_python_version() + '.so')") \
+  -DNUMPY_INCLUDE_DIR="$NUMPY_INCLUDE" \
+  -DOpenCASCADE_DIR=$CASROOT/lib/cmake/opencascade \
+  -DCMAKE_BUILD_TYPE=Release
+
+
+
+
+
+make -j$(nproc) && sudo make install
+```
+
+#### 1.2.2.2. Cpp生成
+在编译完成后，运行：vim /home/yantao/opencascade/lib/cmake/opencascade/OpenCASCADEVisualizationTargets.cmake 在Ln88行，去掉对TKIVtk库的引用。可以直接make，然后生成双曲面。该双曲面可以由freecad软件打开并正常显示。

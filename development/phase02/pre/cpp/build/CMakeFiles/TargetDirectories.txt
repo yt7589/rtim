@@ -1,0 +1,3 @@
+/mnt/d/adev/rtim/development/phase02/pre/cpp/build/CMakeFiles/generate_test_surface.dir
+/mnt/d/adev/rtim/development/phase02/pre/cpp/build/CMakeFiles/edit_cache.dir
+/mnt/d/adev/rtim/development/phase02/pre/cpp/build/CMakeFiles/rebuild_cache.dir
